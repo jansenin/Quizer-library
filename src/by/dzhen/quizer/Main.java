@@ -1,5 +1,6 @@
 package by.dzhen.quizer;
 
+import by.dzhen.quizer.json_task_parsers.FileTextTasksParser;
 import by.dzhen.quizer.task_generators.CSEasyQuestionsTaskGenerator;
 import by.dzhen.quizer.task_generators.GroupTaskGenerator;
 import by.dzhen.quizer.task_generators.PoolTaskGenerator;
@@ -7,20 +8,25 @@ import by.dzhen.quizer.tasks.math_tasks.EquationTask;
 import by.dzhen.quizer.tasks.math_tasks.ExpressionTask;
 import by.dzhen.quizer.tasks.math_tasks.MathTask.Generator.Operation;
 import by.dzhen.quizer.tasks.Task;
-import by.dzhen.quizer.tasks.TextTask;
 
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Scanner;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     private static Scanner in;
-    private static Map<String, Quiz> quizes;
+    private static Map<String, Quiz> quizzes;
     private static Quiz quiz;
 
     public static void main(String[] args) {
         init();
-        quiz = quizes.get(enterValidQuizName());
+
+        informAboutAvailableQuizzes();
+
+        quiz = quizzes.get(enterValidQuizName());
 
         while (!quiz.isFinished()) {
             Result result = dealWithNextTaskUntilCorrectInputAndGetResult();
@@ -31,18 +37,25 @@ public class Main {
     }
 
     private static void init() {
-        quizes = getQuizMap();
+        quizzes = getQuizMap();
         in = new Scanner(System.in);
+    }
+
+    private static void informAboutAvailableQuizzes() {
+        System.out.println("List of available quizzes:");
+        quizzes.forEach((name, quiz) -> System.out.println(name));
+        System.out.println();
     }
 
     private static String enterValidQuizName() {
         System.out.print("Enter quiz name: ");
         String quizName = in.nextLine();
-        while (!quizes.containsKey(quizName)) {
+        while (!quizzes.containsKey(quizName)) {
             System.out.println("There is no quiz with this name.");
             System.out.print("Enter quiz name: ");
             quizName = in.nextLine();
         }
+        System.out.println();
         return quizName;
     }
 
@@ -74,6 +87,7 @@ public class Main {
                 assert false;
             }
         }
+        System.out.println();
     }
 
     private static void printMark() {
@@ -86,14 +100,50 @@ public class Main {
      * значение - сам тест {@link Quiz}
      */
     static Map<String, Quiz> getQuizMap() {
-        return Map.of(
-                "EquationsQuiz", makeEquationQuiz(),
-                "ExpressionsQuiz", makeExpressionQuiz(),
-                "TextQuizWithDuplicates", makeTextQuizWithDuplicates(),
-                "TextQuizWithoutDuplicates", makeTextQuizWithoutDuplicates(),
-                "CSQuiz", makeCsQuestionsQuiz(),
-                "AllInOneQuiz", makeAllInOneQuiz()
-        );
+        Map<String, Quiz> result = new HashMap<>() {{
+            put("EquationsQuiz", makeEquationQuiz());
+            put("ExpressionsQuiz", makeExpressionQuiz());
+            put("TextQuizWithDuplicates", makeTextQuizWithDuplicates());
+            put("TextQuizWithoutDuplicates", makeTextQuizWithoutDuplicates());
+            put("CSQuiz", makeCsQuestionsQuiz());
+            put("AllInOneQuiz", makeAllInOneQuiz());
+        }};
+        try {
+            result.putAll(loadAllTextQuizzes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String getNameWithoutExtension(String file) {
+        int dotIndex = file.lastIndexOf('.');
+        return (dotIndex == -1) ? file : file.substring(0, dotIndex);
+    }
+
+    private static Map<String, Quiz> loadAllTextQuizzes() throws IOException {
+        class TasksPack {
+            private Path path;
+
+            public TasksPack(Path path) {
+                this.path = path;
+            }
+
+            public String getName() {
+                return getNameWithoutExtension(path.getFileName().toString()) + "Quiz";
+            }
+
+            public Quiz loadAndMakeQuiz() {
+                List<Task> tasks = new FileTextTasksParser(path.toString()).parse();
+                PoolTaskGenerator generator = new PoolTaskGenerator(false, tasks);
+                return new Quiz(generator, tasks.size());
+            }
+        }
+
+        return Files.list(Paths.get("text_tasks"))
+                .map(TasksPack::new)
+                .parallel()
+                .collect(Collectors.toMap(TasksPack::getName, TasksPack::loadAndMakeQuiz));
     }
 
     private static Quiz makeEquationQuiz() {
@@ -129,15 +179,15 @@ public class Main {
     }
 
     private static Task.Generator makePoolGeneratorWithDuplicates() {
-        return new PoolTaskGenerator(true,
-                new TextTask("Yes?", "Yes"),
-                new TextTask("No?", "No"));
+        String path = Paths.get("text_tasks", "Negotiation.json").toString();
+        List<Task> tasks = new FileTextTasksParser(path).parse();
+        return new PoolTaskGenerator(true, tasks);
     }
 
     private static Task.Generator makePoolGeneratorWithoutDuplicates() {
-        return new PoolTaskGenerator(false,
-                new TextTask("Yes?", "Yes"),
-                new TextTask("No?", "No"));
+        String path = Paths.get("text_tasks", "Negotiation.json").toString();
+        List<Task> tasks = new FileTextTasksParser(path).parse();
+        return new PoolTaskGenerator(false, tasks);
     }
 
     private static Task.Generator makeCsQuestionsTaskGenerator() {

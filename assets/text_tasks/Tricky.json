@@ -1,0 +1,22 @@
+[
+  {
+    "text": "Solve for n: 1 + 2 + 3 + ... + n = 45",
+    "answer": "10"
+  },
+  {
+    "text": "Solve for ... : 1 + 2 + 3 + ... + 10 = 45",
+    "answer": "29"
+  },
+  {
+    "text": "Find such natural number n and integer m that n/m = pi. Enter n+m as an answer.",
+    "answer": "n+m"
+  },
+  {
+    "text": "Find such natural numbers a, b and c such that a^3 + b^3 = c^3.\nEnter a^3 + (b - c)(b^2 + bc + c^2) as an answer.",
+    "answer": "0"
+  },
+  {
+    "text": "20 = 20\n36 - 16 = 45 - 25\n16 - 36 + 81/4 = 25 - 45 + 81/4\n4^2 - 2*4*(9/2) + (9/2)^2 = 5^2 - 2*5*(9/2) + (9/2)^2\n(4-9/2)^2 = (5 - 9/2)^2\n(4 - 9/2) = (5 - 9/2)\n4 = 5\n2 + 2 = 5\nDid you find a mistake?",
+    "answer": "yes"
+  }
+]

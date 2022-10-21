@@ -1,0 +1,14 @@
+[
+  {
+    "text": "Yes?",
+    "answer": "no",
+  },
+  {
+    "text": "No?",
+    "answer": "yes",
+  },
+  {
+    "text": "Say kerfuffle hullaballoo ragamuffin gobbledygook",
+    "answer": "kerfuffle hullaballoo ragamuffin gobbledygook",
+  }
+]
